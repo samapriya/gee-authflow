@@ -1,6 +1,6 @@
 # AuthFlow — GEE Repository Manager
 
-![AuthFlow](https://i.imgur.com/sf5QL1g.png)
+<p align="center"><img src="https://i.imgur.com/sf5QL1g.png" alt="AuthFlow"/></p>
 
 > Browse, filter, and export your Google Earth Engine repositories with secure, session-based authentication. No database. No stored credentials. Just your session, your repos, and a clean JSON export.
 

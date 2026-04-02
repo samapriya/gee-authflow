@@ -1,9 +1,15 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import requests
 
-app = FastAPI(title="GEE Repo Tool API")
+app = FastAPI(
+    title="AuthFlow — GEE Repository Manager",
+    description="Browse, filter, and export your Google Earth Engine repositories.",
+    version="1.0.0",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,15 +31,19 @@ class ExportPayload(BaseModel):
     xsrf_token: str
 
 
-@app.get("/health")
+@app.get("/health", tags=["System"])
 def health():
+    """Returns ok if the service is running."""
     return {"status": "ok"}
 
 
-@app.post("/api/repos")
+@app.post("/api/repos", tags=["GEE"])
 def list_repos(payload: AuthPayload):
-    # Exact headers from the working Python script.
-    # GEE is just slow (1-2 min) — that's normal, not a header issue.
+    """
+    Fetch the authenticated user's full repository list from GEE.
+    Pass your browser session cookies and XSRF token from the GEE Code Editor.
+    Expect 1–2 minutes — GEE's repo list endpoint is genuinely slow.
+    """
     headers = {
         "accept": "*/*",
         "accept-language": "en-US,en;q=0.9",
@@ -60,7 +70,7 @@ def list_repos(payload: AuthPayload):
             "https://code.earthengine.google.com/repo/list",
             headers=headers,
             cookies=payload.cookies,
-            timeout=180,  # GEE legitimately takes 1-2 minutes
+            timeout=180,
         )
     except requests.exceptions.ConnectionError as e:
         raise HTTPException(
@@ -111,8 +121,11 @@ def _hint(status: int) -> str:
     }.get(status, "Check the body field for details")
 
 
-@app.post("/api/export")
+@app.post("/api/export", tags=["GEE"])
 def export_repos(payload: ExportPayload):
+    """
+    Format a list of repo names into a structured export manifest with clone URLs.
+    """
     result = {}
     for name in payload.repos:
         key = name.split("/")[-1]
@@ -121,3 +134,7 @@ def export_repos(payload: ExportPayload):
             "clone_url": f"https://earthengine.googlesource.com/{name}",
         }
     return result
+
+
+# ── Serve the frontend — must be last so /docs and /api routes take priority ──
+app.mount("/", StaticFiles(directory="static", html=True), name="static")

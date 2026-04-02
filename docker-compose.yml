@@ -1,16 +1,7 @@
 services:
-  backend:
-    build: ./backend
-    container_name: canopy-backend
+  authflow:
+    build: .
+    container_name: authflow
     ports:
-      - "8432:8000"
-    restart: unless-stopped
-
-  frontend:
-    build: ./frontend
-    container_name: canopy-frontend
-    ports:
-      - "127.0.0.1:55432:3000"
-    depends_on:
-      - backend
+      - "127.0.0.1:55432:8000"
     restart: unless-stopped
